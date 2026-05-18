@@ -1,0 +1,618 @@
+:root {
+  --ink: #211332;
+  --muted: #796b8d;
+  --line: #e9dff5;
+  --paper: #fffaff;
+  --soft: #f8f1ff;
+  --blue: #5a3fd6;
+  --purple: #4b197d;
+  --green: #20735c;
+  --amber: #9c6817;
+  --rose: #8e1b72;
+  --shadow: 0 18px 44px rgba(34, 12, 63, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  overflow-x: hidden;
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(151, 95, 220, 0.3), transparent 34%),
+    linear-gradient(180deg, #1b0a2d 0%, #2b1248 48%, #190824 100%),
+    #1b0a2d;
+  color: var(--ink);
+  font-family:
+    "Microsoft YaHei",
+    "PingFang SC",
+    "Malgun Gothic",
+    "Segoe UI",
+    Arial,
+    sans-serif;
+}
+
+.app-shell {
+  width: min(1120px, calc(100% - 32px));
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 28px 0 48px;
+}
+
+.hero,
+.today-strip,
+.color-grid,
+.zodiac-grid,
+.word-grid,
+.story-grid,
+.date-card,
+.color-card,
+.zodiac-card,
+.word-card,
+.story-panel {
+  max-width: 100%;
+}
+
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: center;
+  min-height: 210px;
+  padding: 30px 34px;
+  overflow: hidden;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(45, 19, 76, 0.98), rgba(93, 38, 164, 0.94)),
+    #2d134c;
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 18px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09), transparent 42%);
+  pointer-events: none;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 10px;
+  font-size: 42px;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.hero-subtitle {
+  max-width: 560px;
+  margin-bottom: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.today-strip {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 18px 0 26px;
+}
+
+.date-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 18px;
+  min-width: 0;
+  min-height: 84px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 250, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.date-divider {
+  display: none;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.today-strip strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.45;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 28px 0 14px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: #fbf7ff;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 32px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(43, 17, 74, 0.12);
+}
+
+.chip-blue {
+  background: #ede7ff;
+  color: var(--blue);
+}
+
+.chip-purple {
+  background: #f4e7ff;
+  color: var(--purple);
+}
+
+.chip-amber {
+  background: #fff0cc;
+  color: var(--amber);
+}
+
+.chip-green {
+  background: #e1f4ee;
+  color: var(--green);
+}
+
+.chip-rose {
+  background: #ffe2f5;
+  color: var(--rose);
+}
+
+.chip-aqua {
+  background: #def7f7;
+  color: #087073;
+}
+
+.color-grid,
+.zodiac-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.color-card,
+.zodiac-card,
+.word-card,
+.story-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, rgba(111, 52, 151, 0.08), transparent 38%),
+    repeating-linear-gradient(135deg, rgba(85, 34, 116, 0.04) 0 1px, transparent 1px 16px),
+    var(--paper);
+  box-shadow: 0 14px 32px rgba(47, 20, 76, 0.1);
+}
+
+.color-card::before,
+.zodiac-card::before,
+.word-card::before,
+.story-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: linear-gradient(90deg, #6a3ad1, #b64aa1, #f0b35d);
+}
+
+.color-card > *,
+.zodiac-card > *,
+.word-card > *,
+.story-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.color-card {
+  min-width: 0;
+  min-height: 154px;
+  padding: 18px;
+  border-radius: 14px;
+}
+
+.zodiac-card {
+  min-width: 0;
+  min-height: 0;
+  padding: 20px;
+  border-radius: 14px;
+}
+
+.zodiac-card h3 {
+  margin: 0 0 14px;
+  color: #211332;
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.zodiac-part {
+  padding-top: 14px;
+  border-top: 1px solid #eadff6;
+}
+
+.zodiac-part + .zodiac-part {
+  margin-top: 14px;
+}
+
+.zodiac-part h4 {
+  margin: 0 0 6px;
+  color: #5d238c;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.zodiac-card p {
+  overflow-wrap: anywhere;
+  margin: 0 0 9px;
+  color: #312146;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.zodiac-card p:last-child {
+  margin-bottom: 0;
+}
+
+.zodiac-card ul {
+  margin: 6px 0 10px 18px;
+  padding: 0;
+  color: #312146;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.zodiac-card li {
+  padding-left: 2px;
+}
+
+.zodiac-card blockquote {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-left: 4px solid #8d4de8;
+  border-radius: 0 10px 10px 0;
+  background: rgba(116, 68, 167, 0.1);
+  color: #33164f;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.zodiac-card blockquote span {
+  display: block;
+}
+
+.color-card h3 {
+  margin: 0 0 14px;
+  font-size: 17px;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fbf7ff;
+  font-size: 14px;
+  font-weight: 700;
+  max-width: 100%;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(33, 19, 50, 0.16);
+  border-radius: 50%;
+}
+
+.word-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.word-card {
+  min-width: 0;
+  min-height: 248px;
+  padding: 18px;
+  border-left: 6px solid var(--blue);
+  border-radius: 14px;
+}
+
+.word-card.korean {
+  border-left-color: var(--purple);
+}
+
+.word-top {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.word-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 50%;
+  background: #eaf0ff;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.korean .word-number {
+  background: #f3eaff;
+  color: var(--purple);
+}
+
+.word {
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.pron {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.word-card p {
+  margin: 7px 0;
+  color: #312146;
+  font-size: 14px;
+  line-height: 1.58;
+}
+
+.hint {
+  margin-top: 12px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  background: #f3ecff;
+  color: #3d2a56;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.korean .hint {
+  background: #f8ecff;
+}
+
+.story-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.story-panel {
+  min-width: 0;
+  padding: 22px;
+  border-radius: 16px;
+}
+
+.story-panel h2 {
+  margin: 18px 0 12px;
+  font-size: 22px;
+  line-height: 1.45;
+}
+
+.story-panel p {
+  overflow-wrap: anywhere;
+  margin-bottom: 0;
+  color: #312146;
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.fact-panel {
+  background: #fff9ed;
+  border-color: #f1d69c;
+}
+
+.fact-panel h2 {
+  padding: 14px 16px;
+  border-left: 6px solid #f59f00;
+  border-radius: 0 10px 10px 0;
+  background: #fff1d6;
+  color: #e8590c;
+}
+
+.history-panel {
+  background: #fbf8ff;
+  border-color: #dfd0ef;
+}
+
+.source-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e7dcf1;
+}
+
+.source-links a {
+  color: var(--purple);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+@media (max-width: 980px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .today-strip,
+  .color-grid,
+  .zodiac-grid,
+  .story-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .word-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    width: 100%;
+    padding: 8px 0 34px;
+  }
+
+  .hero {
+    margin: 0 8px;
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 22px 20px;
+    border-radius: 14px;
+  }
+
+  h1 {
+    font-size: 32px;
+  }
+
+  .color-grid,
+  .zodiac-grid,
+  .word-grid,
+  .story-grid {
+    grid-template-columns: 1fr;
+    padding: 0 8px;
+  }
+
+  .today-strip {
+    padding: 0 8px;
+    margin: 12px 0 22px;
+  }
+
+  .date-card {
+    display: block;
+    width: 100%;
+    min-height: 0;
+    padding: 16px 18px;
+    border-radius: 12px;
+    grid-column: 1 / -1;
+  }
+
+  .date-card strong {
+    font-size: 18px;
+  }
+
+  .date-card .label:not(:first-child) {
+    margin-top: 14px;
+  }
+
+  .date-divider {
+    display: block;
+    height: 1px;
+    margin: 14px 0;
+    background: #edf2f7;
+  }
+
+  .section-heading {
+    padding: 0 8px;
+    margin: 24px 0 12px;
+  }
+
+  .section-heading h2 {
+    font-size: 21px;
+  }
+
+  .color-card,
+  .zodiac-card,
+  .word-card,
+  .story-panel {
+    border-radius: 12px;
+  }
+
+  .color-card,
+  .zodiac-card {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .swatch {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 8px 10px;
+  }
+
+  .word-card {
+    min-height: 0;
+    padding: 18px 16px;
+  }
+
+  .story-panel {
+    padding: 18px 16px;
+  }
+
+  .section-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+}

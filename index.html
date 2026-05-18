@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>每日推送小知识</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow" id="today-eyebrow">今日小知识</p>
+          <h1 id="page-title">每日推送小知识</h1>
+        </div>
+      </section>
+
+      <section class="today-strip" aria-label="今日日期信息">
+        <div class="date-card">
+          <span class="label">阳历</span>
+          <strong id="solar-date">加载中</strong>
+          <span class="date-divider"></span>
+          <span class="label">农历</span>
+          <strong id="lunar-date">加载中</strong>
+          <span class="date-divider"></span>
+          <span class="label">干支日</span>
+          <strong id="ganzhi-date">加载中</strong>
+        </div>
+      </section>
+
+      <section class="color-section" aria-label="今日穿衣吉色">
+        <div class="section-heading">
+          <span class="chip chip-rose">今日穿衣吉色</span>
+        </div>
+        <div class="color-grid" id="color-grid"></div>
+      </section>
+
+      <section class="zodiac-section" aria-labelledby="zodiac-title">
+        <div class="section-heading">
+          <span class="chip chip-aqua">水象星座</span>
+          <h2 id="zodiac-title">今日运势</h2>
+        </div>
+        <div class="zodiac-grid" id="zodiac-grid"></div>
+      </section>
+
+      <section class="word-section" aria-labelledby="english-title">
+        <div class="section-heading">
+          <span class="chip chip-blue">English</span>
+          <h2 id="english-title">每日 5 个实用英语单词</h2>
+        </div>
+        <div class="word-grid" id="english-words"></div>
+      </section>
+
+      <section class="word-section" aria-labelledby="korean-title">
+        <div class="section-heading">
+          <span class="chip chip-purple">Korean</span>
+          <h2 id="korean-title">每日 5 个实用韩语单词</h2>
+        </div>
+        <div class="word-grid" id="korean-words"></div>
+      </section>
+
+      <section class="story-grid">
+        <article class="story-panel fact-panel" aria-labelledby="fact-title">
+          <span class="chip chip-amber">今日冷知识</span>
+          <h2 id="fact-title">加载中</h2>
+          <p id="fact-answer"></p>
+        </article>
+
+        <article class="story-panel history-panel" aria-labelledby="history-title">
+          <span class="chip chip-green">历史上的今天</span>
+          <h2 id="history-title">加载中</h2>
+          <p id="history-answer"></p>
+          <div class="source-links" id="history-sources"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
