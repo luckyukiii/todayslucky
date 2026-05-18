@@ -135,10 +135,10 @@ function validateContent(raw, parts, transits) {
 }
 
 export async function generateDailyContent(parts, used = {}) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY is not configured.");
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) throw new Error("DEEPSEEK_API_KEY is not configured.");
 
-  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  const model = process.env.DEEPSEEK_MODEL || "deepseek-v4-flash";
   const key = dateKey(parts);
   const transits = currentTransits(parts);
   const usedFacts = (used.facts || []).slice(-30);
@@ -183,7 +183,7 @@ ${usedHistory.join("；") || "无"}
 6. 星座文案参考这种风格：具体、短句、有节奏，可以有“今天适合/不适合”列表和一个提问式 quote；不要幸运色、幸运数字、综合运势、关键词。
 7. 今日建议只写 1-2 句，有力量感，不鸡汤，不宿命论，不夸张预测。`;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://api.deepseek.com/chat/completions", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
@@ -192,6 +192,8 @@ ${usedHistory.join("；") || "无"}
     body: JSON.stringify({
       model,
       temperature: 0.8,
+      stream: false,
+      thinking: { type: "disabled" },
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: "你是严谨的中文内容编辑、实用语言老师和现代西方占星内容作者。你必须输出可解析 JSON。" },
@@ -202,12 +204,12 @@ ${usedHistory.join("；") || "无"}
 
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(`OpenAI API error ${response.status}: ${message}`);
+    throw new Error(`DeepSeek API error ${response.status}: ${message}`);
   }
 
   const completion = await response.json();
   const text = completion.choices?.[0]?.message?.content;
-  if (!text) throw new Error("OpenAI API returned an empty response.");
+  if (!text) throw new Error("DeepSeek API returned an empty response.");
   return validateContent(JSON.parse(text), parts, transits);
 }
 

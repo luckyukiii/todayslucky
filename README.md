@@ -15,7 +15,7 @@
 
 如果只想预览静态版，可以使用 Netlify Drop。
 
-如果要每天 00:00 自动生成新内容，请使用 GitHub 连接 Netlify 或 Netlify CLI 部署。详见 `NETLIFY_FUNCTIONS_DEPLOY.md`。
+如果要每天 00:00 自动生成新内容，请使用 GitHub 连接 Netlify 或 Netlify CLI 部署，并配置 DeepSeek API 环境变量。详见 `NETLIFY_FUNCTIONS_DEPLOY.md`。
 
 也可以把整个 `daily-knowledge-site` 文件夹上传到服务器，例如：
 
