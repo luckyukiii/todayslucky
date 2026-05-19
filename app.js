@@ -1,4 +1,4 @@
-const CONTENT_VERSION = 3;
+const CONTENT_VERSION = 5;
 const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 const GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
 const ZHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
@@ -190,8 +190,12 @@ const MOON_PHASES = [
   "下弦后",
   "残月期",
 ];
+const PLANET_NUMBERS = { sun: 1, moon: 2, jupiter: 3, uranus: 4, mercury: 5, venus: 6, neptune: 7, saturn: 8, mars: 9 };
+const WEEKDAY_RULERS = ["sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn"];
+const ELEMENT_NUMBERS = { 火: 9, 土: 8, 风: 5, 水: 2 };
+const MOON_PHASE_NUMBERS = [1, 3, 4, 6, 6, 8, 8, 9];
 const DAILY_SIGNS = [
-  { name: "双鱼座", signIndex: 11, ruler: "jupiter" },
+  { name: "双鱼座", signIndex: 11, ruler: "neptune", coRuler: "jupiter" },
   { name: "巨蟹座", signIndex: 3, ruler: "moon" },
   { name: "白羊座", signIndex: 0, ruler: "mars" },
 ];
@@ -259,6 +263,42 @@ function planetInfo(label, longitude) {
   };
 }
 
+function aspectAngleDistance(a, b) {
+  const diff = Math.abs(normalizeAngle(a - b));
+  return diff > 180 ? 360 - diff : diff;
+}
+
+function importantAspects(planets) {
+  const aspectTypes = [
+    { name: "合相", angle: 0, orb: 7 },
+    { name: "六合", angle: 60, orb: 4 },
+    { name: "四分", angle: 90, orb: 5 },
+    { name: "三分", angle: 120, orb: 5 },
+    { name: "对分", angle: 180, orb: 6 },
+  ];
+  const entries = Object.values(planets);
+  const aspects = [];
+
+  for (let i = 0; i < entries.length; i += 1) {
+    for (let j = i + 1; j < entries.length; j += 1) {
+      const distance = aspectAngleDistance(entries[i].lon, entries[j].lon);
+      const aspect = aspectTypes
+        .map((item) => ({ ...item, orbValue: Math.abs(distance - item.angle) }))
+        .filter((item) => item.orbValue <= item.orb)
+        .sort((a, b) => a.orbValue - b.orbValue)[0];
+      if (aspect) {
+        aspects.push({
+          label: `${entries[i].label}${aspect.name}${entries[j].label}`,
+          angle: Math.round(distance),
+          orb: Number(aspect.orbValue.toFixed(1)),
+        });
+      }
+    }
+  }
+
+  return aspects.sort((a, b) => a.orb - b.orb).slice(0, 6);
+}
+
 function lines(...items) {
   return items.map((item) => `<p>${item}</p>`).join("");
 }
@@ -271,10 +311,32 @@ function quoteBlock(...items) {
   return `<blockquote>${items.map((item) => `<span>${item}</span>`).join("")}</blockquote>`;
 }
 
-function luckyNumber(parts, signName) {
-  const signIndex = ZODIAC_SIGNS.indexOf(signName);
-  const seed = seedFromDate(parts) + (signIndex + 1) * 97;
-  return (seededIndex(seed, 99, signIndex) % 99) + 1;
+function digitalRoot(number) {
+  return ((number - 1) % 9) + 1;
+}
+
+function astrologicalLuckyNumber(parts, sign, transits) {
+  const dayRuler = WEEKDAY_RULERS[utcDate(parts).getUTCDay()];
+  const rulerNumber = PLANET_NUMBERS[sign.ruler] || 1;
+  const weekdayNumber = PLANET_NUMBERS[dayRuler] || 1;
+  const transitElement = transits[sign.ruler]?.element || SIGN_ELEMENTS[sign.signIndex];
+  const transitNumber = ELEMENT_NUMBERS[transitElement] || rulerNumber;
+  const moonPhaseNumber = MOON_PHASE_NUMBERS[transits.phaseIndex] || 2;
+  const dailyActivationNumber = digitalRoot(weekdayNumber + transitNumber + moonPhaseNumber);
+  return Number(`${rulerNumber}${dailyActivationNumber}`);
+}
+
+function fallbackLuckyReason(parts, sign, transits) {
+  const dayRuler = WEEKDAY_RULERS[utcDate(parts).getUTCDay()];
+  const ruler = transits[sign.ruler];
+  const day = transits[dayRuler];
+  const aspect = (transits.aspects || []).find((item) => ruler && item.label.includes(ruler.label));
+  const reasonParts = [
+    `${sign.name}今天先看守护星${ruler?.label || ""}，它对应数字 ${PLANET_NUMBERS[sign.ruler]}。`,
+    `今日星期主星是${day?.label || ""}，月亮落在${transits.moon.sign}，把当天能量拉向${transits.moon.element}象的节奏。`,
+    aspect ? `${aspect.label}让这个数字更有推动感。` : `${transits.phase}让情绪和行动更需要找到一个清晰的落点。`,
+  ];
+  return reasonParts.filter(Boolean).join("");
 }
 
 function currentTransits(parts) {
@@ -289,7 +351,7 @@ function currentTransits(parts) {
   const phaseAngle = normalizeAngle(moonLon - sunLon);
   const phaseIndex = Math.floor(((phaseAngle + 22.5) % 360) / 45);
 
-  return {
+  const planets = {
     sun: planetInfo("太阳", sunLon),
     moon: planetInfo("月亮", moonLon),
     mercury: planetInfo("水星", 252.251 + 4.09233445 * days),
@@ -297,7 +359,15 @@ function currentTransits(parts) {
     mars: planetInfo("火星", 355.433 + 0.52402068 * days),
     jupiter: planetInfo("木星", 34.351 + 0.08309135 * days),
     saturn: planetInfo("土星", 50.077 + 0.03345965 * days),
+    uranus: planetInfo("天王星", 314.055 + 0.01172834 * days),
+    neptune: planetInfo("海王星", 304.348 + 0.00598103 * days),
+  };
+
+  return {
+    ...planets,
     phase: MOON_PHASES[phaseIndex],
+    phaseIndex,
+    aspects: importantAspects(planets),
   };
 }
 
@@ -506,11 +576,12 @@ function renderZodiac(parts) {
   const transits = currentTransits(parts);
   document.querySelector("#zodiac-grid").innerHTML = DAILY_SIGNS.map((sign) => {
     const fortune = buildHoroscope(sign, transits);
+    const number = astrologicalLuckyNumber(parts, sign, transits);
     return `
       <article class="zodiac-card">
         <div class="zodiac-card-header">
           <h3>${sign.name}今日运势</h3>
-          <span class="lucky-number">幸运数字 ${luckyNumber(parts, sign.name)}</span>
+          <span class="lucky-number">幸运数字 ${number}</span>
         </div>
         <div class="zodiac-part">
           <h4>感情</h4>
