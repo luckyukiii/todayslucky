@@ -52,6 +52,39 @@ const COLOR_BANK = {
   ],
 };
 
+const DEFAULT_WEATHER_LOCATION = {
+  city: "上海",
+  latitude: 31.2304,
+  longitude: 121.4737,
+  fallback: true,
+};
+
+const WEATHER_CODE_TEXT = {
+  0: "晴",
+  1: "大部晴朗",
+  2: "多云",
+  3: "阴",
+  45: "有雾",
+  48: "雾凇",
+  51: "小毛毛雨",
+  53: "毛毛雨",
+  55: "较强毛毛雨",
+  61: "小雨",
+  63: "中雨",
+  65: "大雨",
+  71: "小雪",
+  73: "中雪",
+  75: "大雪",
+  80: "阵雨",
+  81: "较强阵雨",
+  82: "强阵雨",
+  95: "雷雨",
+  96: "雷雨伴冰雹",
+  99: "强雷雨伴冰雹",
+};
+
+const RAINY_WEATHER_CODES = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]);
+
 const LUNAR_INFO = [
   0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
   0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
@@ -625,6 +658,152 @@ async function loadGeneratedContent(key) {
   }
 }
 
+function setWeatherContent(label, summary, advice) {
+  document.querySelector("#weather-location").textContent = label;
+  document.querySelector("#weather-summary").textContent = summary;
+  document.querySelector("#weather-advice").textContent = advice;
+}
+
+function numeric(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function rounded(value) {
+  const number = numeric(value);
+  return number === null ? null : Math.round(number);
+}
+
+async function fetchJson(url, timeout = 4500) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+    return await response.json();
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+function normalizeLocation(data, source) {
+  const latitude = numeric(data.latitude);
+  const longitude = numeric(data.longitude);
+  if (latitude === null || longitude === null) return null;
+  return {
+    city: data.city || data.region || data.country_name || data.country || "当地",
+    latitude,
+    longitude,
+    source,
+  };
+}
+
+async function detectWeatherLocation() {
+  const providers = [
+    {
+      url: "https://ipapi.co/json/",
+      map: (data) => normalizeLocation(data, "ipapi"),
+    },
+    {
+      url: "https://ipwho.is/",
+      map: (data) => {
+        if (data.success === false) return null;
+        return normalizeLocation(data, "ipwho");
+      },
+    },
+  ];
+
+  for (const provider of providers) {
+    try {
+      const location = provider.map(await fetchJson(provider.url));
+      if (location) return location;
+    } catch (error) {
+      console.info("IP location failed.", error);
+    }
+  }
+
+  return DEFAULT_WEATHER_LOCATION;
+}
+
+function weatherText(code) {
+  return WEATHER_CODE_TEXT[Number(code)] || "天气变化";
+}
+
+function buildWeatherUrl(location) {
+  const url = new URL("https://api.open-meteo.com/v1/forecast");
+  url.search = new URLSearchParams({
+    latitude: String(location.latitude),
+    longitude: String(location.longitude),
+    current: "temperature_2m,apparent_temperature,weather_code,wind_speed_10m",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+    forecast_days: "1",
+    timezone: "auto",
+  });
+  return url.toString();
+}
+
+function clothingAdvice({ apparent, max, rainChance, windSpeed, weatherCode }) {
+  const feels = apparent ?? max;
+  let advice = "按体感选择轻便衣物，出门前再看一眼窗外。";
+
+  if (feels !== null) {
+    if (feels >= 30) advice = "短袖、薄裙或透气速干衣更舒服，注意防晒和补水。";
+    else if (feels >= 26) advice = "短袖或轻薄衬衫就够，长时间待空调房可以备一件薄外套。";
+    else if (feels >= 21) advice = "长袖 T 恤、衬衫或薄针织都合适，早晚可以加薄外套。";
+    else if (feels >= 16) advice = "建议长袖配薄外套，早晚偏凉时更稳妥。";
+    else if (feels >= 10) advice = "卫衣、针织衫加外套会更舒服，怕冷可以加围巾。";
+    else advice = "厚外套、毛衣和保暖内搭更合适，注意防风保暖。";
+  }
+
+  const rainy = (rainChance !== null && rainChance >= 45) || RAINY_WEATHER_CODES.has(Number(weatherCode));
+  if (rainy) advice += " 今天记得带伞。";
+  if (windSpeed !== null && windSpeed >= 28) advice += " 风比较大，外套尽量选防风一点的。";
+  return `穿衣建议：${advice}`;
+}
+
+async function fetchWeather(location) {
+  const data = await fetchJson(buildWeatherUrl(location), 7000);
+  const current = data.current || {};
+  const daily = data.daily || {};
+  const weatherCode = daily.weather_code?.[0] ?? current.weather_code;
+  const min = rounded(daily.temperature_2m_min?.[0]);
+  const max = rounded(daily.temperature_2m_max?.[0]);
+  const currentTemp = rounded(current.temperature_2m);
+  const apparent = rounded(current.apparent_temperature);
+  const rainChance = rounded(daily.precipitation_probability_max?.[0]);
+  const windSpeed = rounded(current.wind_speed_10m);
+
+  const temperatureRange = min !== null && max !== null ? `${min}~${max}°C` : currentTemp !== null ? `${currentTemp}°C` : "";
+  const now = currentTemp !== null ? `现在 ${currentTemp}°C` : "";
+  const rain = rainChance !== null && rainChance >= 20 ? `降水概率 ${rainChance}%` : "";
+  const summary = [`${location.city} · ${weatherText(weatherCode)}`, temperatureRange, now, rain].filter(Boolean).join(" · ");
+  const advice = clothingAdvice({ apparent, max, rainChance, windSpeed, weatherCode });
+  return { summary, advice };
+}
+
+async function renderWeather() {
+  setWeatherContent("今日天气", "天气加载中", "正在获取今日穿衣建议。");
+
+  try {
+    const location = await detectWeatherLocation();
+    let weather;
+    try {
+      weather = await fetchWeather(location);
+    } catch (error) {
+      if (location.fallback) throw error;
+      console.info("Local weather failed, using Shanghai fallback.", error);
+      weather = await fetchWeather(DEFAULT_WEATHER_LOCATION);
+      location.city = DEFAULT_WEATHER_LOCATION.city;
+      location.fallback = true;
+    }
+
+    setWeatherContent(`今日天气 · ${location.city}${location.fallback ? "（默认）" : ""}`, weather.summary, weather.advice);
+  } catch (error) {
+    console.info("Weather unavailable.", error);
+    setWeatherContent("今日天气 · 上海（默认）", "天气暂时获取失败", "穿衣建议：按上海当季体感准备衣物，出门前可以再看一下手机天气。");
+  }
+}
+
 let speechVoices = [];
 
 function refreshSpeechVoices() {
@@ -692,6 +871,7 @@ function render() {
   document.querySelector("#lunar-date").textContent = `农历${lunar.isLeap ? "闰" : ""}${lunarMonthName(lunar.month)}${lunarDayName(lunar.day)}`;
   document.querySelector("#ganzhi-date").textContent = `${ganzhi.text} · ${ganzhi.element}日`;
 
+  renderWeather();
   renderColorCards(ganzhi.element);
   renderZodiac(parts);
   renderWordCards(document.querySelector("#english-words"), pickMany(ENGLISH_WORDS, 5, seed), false);
