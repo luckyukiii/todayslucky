@@ -1,4 +1,4 @@
-const CONTENT_VERSION = 2;
+const CONTENT_VERSION = 3;
 const ZODIAC_SIGNS = ["白羊座", "金牛座", "双子座", "巨蟹座", "狮子座", "处女座", "天秤座", "天蝎座", "射手座", "摩羯座", "水瓶座", "双鱼座"];
 const DAILY_ZODIAC_SIGNS = ["双鱼座", "巨蟹座", "白羊座"];
 const SIGN_ELEMENTS = ["火", "土", "风", "水", "火", "土", "风", "水", "火", "土", "风", "水"];
@@ -89,6 +89,7 @@ function normalizeWord(item) {
 }
 
 function normalizeZodiac(item) {
+  const luckyNumber = Number(item.luckyNumber);
   const sections = item.sections || {};
   const normalizeSection = (section = {}) => ({
     paragraphs: Array.isArray(section.paragraphs) ? section.paragraphs.map(String).filter(Boolean).slice(0, 4) : [],
@@ -99,6 +100,7 @@ function normalizeZodiac(item) {
   });
   return {
     sign: String(item.sign || "").trim(),
+    luckyNumber: Number.isInteger(luckyNumber) && luckyNumber >= 1 && luckyNumber <= 99 ? luckyNumber : null,
     sections: {
       love: normalizeSection(sections.love),
       work: normalizeSection(sections.work),
@@ -106,6 +108,13 @@ function normalizeZodiac(item) {
       advice: normalizeSection(sections.advice),
     },
   };
+}
+
+function luckyNumber(parts, signName) {
+  const signIndex = ZODIAC_SIGNS.indexOf(signName);
+  const seed = parts.year * 10000 + parts.month * 100 + parts.day + (signIndex + 1) * 97;
+  const value = Math.abs(Math.sin(seed * 12.9898 + signIndex * 78.233) * 43758.5453);
+  return (Math.floor((value % 1) * 99) % 99) + 1;
 }
 
 function validateContent(raw, parts, transits) {
@@ -127,7 +136,14 @@ function validateContent(raw, parts, transits) {
       body: String(raw.history?.body || "").trim(),
       sources: Array.isArray(raw.history?.sources) ? raw.history.sources.map((source) => [String(source[0] || ""), String(source[1] || "")]).filter(([name, href]) => name && href).slice(0, 3) : [],
     },
-    zodiac: DAILY_ZODIAC_SIGNS.map((sign) => zodiacItems.find((item) => item.sign === sign)).filter(Boolean),
+    zodiac: DAILY_ZODIAC_SIGNS.map((sign) => {
+      const item = zodiacItems.find((entry) => entry.sign === sign);
+      if (!item) return null;
+      return {
+        ...item,
+        luckyNumber: item.luckyNumber || luckyNumber(parts, sign),
+      };
+    }).filter(Boolean),
   };
 
   if (content.englishWords.length !== 5) throw new Error("AI response must contain exactly 5 English words.");
@@ -169,6 +185,7 @@ ${usedHistory.join("；") || "无"}
   "zodiac": [
     {
       "sign": "双鱼座",
+      "luckyNumber": 7,
       "sections": {
         "love": {"paragraphs": []},
         "work": {"paragraphs": [], "good": [], "avoid": []},
@@ -184,8 +201,8 @@ ${usedHistory.join("；") || "无"}
 2. koreanWords 必须 5 个，偏生活化和日常交流，优先选择吃饭、咖啡、购物、便利店、交通、问路、天气、身体感受、家居和出门场景中的常用词；少选会议、文件、预算、审批等职场词。含词义、发音罗马音、韩文例句、中文翻译、记忆提示。
 3. fact 先抛问题再回答，answer 控制在 200-300 个中文字符，轻松、有趣、通俗。
 4. history 从科技、电影、音乐等领域挑一个“历史上的今天”相关事件，body 控制在 200-300 个中文字符。不要编造来源链接，sources 可以为空数组。
-5. zodiac 按顺序只写双鱼座、巨蟹座、白羊座。每个星座只包含 感情/工作/财运/今日建议 四栏。
-6. 星座文案参考这种风格：具体、短句、有节奏，可以有“今天适合/不适合”列表和一个提问式 quote；不要幸运色、幸运数字、综合运势、关键词。
+5. zodiac 按顺序只写双鱼座、巨蟹座、白羊座。每个星座必须包含 luckyNumber，范围 1-99，且只包含 感情/工作/财运/今日建议 四栏。
+6. 星座文案参考这种风格：具体、短句、有节奏，可以有“今天适合/不适合”列表和一个提问式 quote；不要幸运色、综合运势、关键词。
 7. 今日建议只写 1-2 句，有力量感，不鸡汤，不宿命论，不夸张预测。`;
 
   const response = await fetch("https://api.deepseek.com/chat/completions", {
