@@ -1,8 +1,18 @@
-const CONTENT_VERSION = 3;
+const CONTENT_VERSION = 5;
 const ZODIAC_SIGNS = ["白羊座", "金牛座", "双子座", "巨蟹座", "狮子座", "处女座", "天秤座", "天蝎座", "射手座", "摩羯座", "水瓶座", "双鱼座"];
 const DAILY_ZODIAC_SIGNS = ["双鱼座", "巨蟹座", "白羊座"];
 const SIGN_ELEMENTS = ["火", "土", "风", "水", "火", "土", "风", "水", "火", "土", "风", "水"];
 const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+const MOON_PHASES = ["新月后", "上弦前", "上弦后", "盈凸月", "满月前后", "亏凸月", "下弦后", "残月期"];
+const DAILY_SIGN_DATA = {
+  双鱼座: { signIndex: 11, ruler: "neptune", coRuler: "jupiter" },
+  巨蟹座: { signIndex: 3, ruler: "moon" },
+  白羊座: { signIndex: 0, ruler: "mars" },
+};
+const PLANET_NUMBERS = { sun: 1, moon: 2, jupiter: 3, uranus: 4, mercury: 5, venus: 6, neptune: 7, saturn: 8, mars: 9 };
+const WEEKDAY_RULERS = ["sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn"];
+const ELEMENT_NUMBERS = { 火: 9, 土: 8, 风: 5, 水: 2 };
+const MOON_PHASE_NUMBERS = [1, 3, 4, 6, 6, 8, 8, 9];
 
 function normalizeAngle(degrees) {
   return ((degrees % 360) + 360) % 360;
@@ -21,6 +31,42 @@ function planetInfo(label, longitude) {
     sign: ZODIAC_SIGNS[signIndex],
     element: SIGN_ELEMENTS[signIndex],
   };
+}
+
+function aspectAngleDistance(a, b) {
+  const diff = Math.abs(normalizeAngle(a - b));
+  return diff > 180 ? 360 - diff : diff;
+}
+
+function importantAspects(planets) {
+  const aspectTypes = [
+    { name: "合相", angle: 0, orb: 7 },
+    { name: "六合", angle: 60, orb: 4 },
+    { name: "四分", angle: 90, orb: 5 },
+    { name: "三分", angle: 120, orb: 5 },
+    { name: "对分", angle: 180, orb: 6 },
+  ];
+  const entries = Object.values(planets);
+  const aspects = [];
+
+  for (let i = 0; i < entries.length; i += 1) {
+    for (let j = i + 1; j < entries.length; j += 1) {
+      const distance = aspectAngleDistance(entries[i].longitude, entries[j].longitude);
+      const aspect = aspectTypes
+        .map((item) => ({ ...item, orbValue: Math.abs(distance - item.angle) }))
+        .filter((item) => item.orbValue <= item.orb)
+        .sort((a, b) => a.orbValue - b.orbValue)[0];
+      if (aspect) {
+        aspects.push({
+          label: `${entries[i].label}${aspect.name}${entries[j].label}`,
+          angle: Math.round(distance),
+          orb: Number(aspect.orbValue.toFixed(1)),
+        });
+      }
+    }
+  }
+
+  return aspects.sort((a, b) => a.orb - b.orb).slice(0, 6);
 }
 
 export function shanghaiParts(offsetDays = 0) {
@@ -66,7 +112,9 @@ export function currentTransits(parts) {
   const moonMean = normalizeAngle(218.316 + 13.176396 * days);
   const moonAnomaly = normalizeAngle(134.963 + 13.064993 * days);
   const moonLon = moonMean + 6.289 * sinDeg(moonAnomaly);
-  return {
+  const phaseAngle = normalizeAngle(moonLon - sunLon);
+  const phaseIndex = Math.floor(((phaseAngle + 22.5) % 360) / 45);
+  const planets = {
     sun: planetInfo("太阳", sunLon),
     moon: planetInfo("月亮", moonLon),
     mercury: planetInfo("水星", 252.251 + 4.09233445 * days),
@@ -74,6 +122,15 @@ export function currentTransits(parts) {
     mars: planetInfo("火星", 355.433 + 0.52402068 * days),
     jupiter: planetInfo("木星", 34.351 + 0.08309135 * days),
     saturn: planetInfo("土星", 50.077 + 0.03345965 * days),
+    uranus: planetInfo("天王星", 314.055 + 0.01172834 * days),
+    neptune: planetInfo("海王星", 304.348 + 0.00598103 * days),
+  };
+
+  return {
+    ...planets,
+    phase: MOON_PHASES[phaseIndex],
+    phaseIndex,
+    aspects: importantAspects(planets),
   };
 }
 
@@ -110,11 +167,37 @@ function normalizeZodiac(item) {
   };
 }
 
-function luckyNumber(parts, signName) {
-  const signIndex = ZODIAC_SIGNS.indexOf(signName);
-  const seed = parts.year * 10000 + parts.month * 100 + parts.day + (signIndex + 1) * 97;
-  const value = Math.abs(Math.sin(seed * 12.9898 + signIndex * 78.233) * 43758.5453);
-  return (Math.floor((value % 1) * 99) % 99) + 1;
+function digitalRoot(number) {
+  return ((number - 1) % 9) + 1;
+}
+
+function astrologicalLuckyNumber(parts, signName, transits) {
+  const sign = DAILY_SIGN_DATA[signName];
+  if (!sign) return 1;
+  const weekdayIndex = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay();
+  const dayRuler = WEEKDAY_RULERS[weekdayIndex];
+  const rulerNumber = PLANET_NUMBERS[sign.ruler] || 1;
+  const weekdayNumber = PLANET_NUMBERS[dayRuler] || 1;
+  const transitElement = transits[sign.ruler]?.element || SIGN_ELEMENTS[sign.signIndex];
+  const transitNumber = ELEMENT_NUMBERS[transitElement] || rulerNumber;
+  const moonPhaseNumber = MOON_PHASE_NUMBERS[transits.phaseIndex] || 2;
+  const dailyActivationNumber = digitalRoot(weekdayNumber + transitNumber + moonPhaseNumber);
+  return Number(`${rulerNumber}${dailyActivationNumber}`);
+}
+
+function fallbackLuckyNumberReason(parts, signName, transits) {
+  const sign = DAILY_SIGN_DATA[signName];
+  if (!sign) return "";
+  const weekdayIndex = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay();
+  const dayRuler = WEEKDAY_RULERS[weekdayIndex];
+  const ruler = transits[sign.ruler];
+  const day = transits[dayRuler];
+  const aspect = (transits.aspects || []).find((item) => ruler && item.label.includes(ruler.label));
+  return [
+    `${signName}今天先看守护星${ruler?.label || ""}，它对应数字 ${PLANET_NUMBERS[sign.ruler]}。`,
+    `今日星期主星是${day?.label || ""}，月亮落在${transits.moon.sign}，让当天的情绪底色更清楚。`,
+    aspect ? `${aspect.label}带来额外的推动，所以这个数字更适合今天。` : `${transits.phase}让能量适合收束到一个简单明确的数字上。`,
+  ].filter(Boolean).join("");
 }
 
 function validateContent(raw, parts, transits) {
@@ -141,7 +224,7 @@ function validateContent(raw, parts, transits) {
       if (!item) return null;
       return {
         ...item,
-        luckyNumber: item.luckyNumber || luckyNumber(parts, sign),
+        luckyNumber: item.luckyNumber || astrologicalLuckyNumber(parts, sign, transits),
       };
     }).filter(Boolean),
   };
@@ -201,9 +284,19 @@ ${usedHistory.join("；") || "无"}
 2. koreanWords 必须 5 个，偏生活化和日常交流，优先选择吃饭、咖啡、购物、便利店、交通、问路、天气、身体感受、家居和出门场景中的常用词；少选会议、文件、预算、审批等职场词。含词义、发音罗马音、韩文例句、中文翻译、记忆提示。
 3. fact 先抛问题再回答，answer 控制在 200-300 个中文字符，轻松、有趣、通俗。
 4. history 从科技、电影、音乐等领域挑一个“历史上的今天”相关事件，body 控制在 200-300 个中文字符。不要编造来源链接，sources 可以为空数组。
-5. zodiac 按顺序只写双鱼座、巨蟹座、白羊座。每个星座必须包含 luckyNumber，范围 1-99，且只包含 感情/工作/财运/今日建议 四栏。
+5. zodiac 按顺序只写双鱼座、巨蟹座、白羊座。每个星座必须包含 luckyNumber；其他内容只包含 感情/工作/财运/今日建议 四栏。
 6. 星座文案参考这种风格：具体、短句、有节奏，可以有“今天适合/不适合”列表和一个提问式 quote；不要幸运色、综合运势、关键词。
-7. 今日建议只写 1-2 句，有力量感，不鸡汤，不宿命论，不夸张预测。`;
+7. 今日建议只写 1-2 句，有力量感，不鸡汤，不宿命论，不夸张预测。
+
+幸运数字生成规则：
+你是一位现代西方占星师，也懂基础数字象征学。请为每个 zodiac 星座生成今日幸运数字。
+- 自动使用今天日期：${key}。
+- 基于上方今日真实天象来判断，不要随机编。
+- 综合考虑：该星座守护星、守护星对应数字、今日星期对应行星、今日月亮星座、今日重要相位、当日整体能量氛围。
+- 常用行星数字对应：太阳 = 1，月亮 = 2，木星 = 3，天王星 = 4，水星 = 5，金星 = 6，海王星 = 7，土星 = 8，火星 = 9。
+- 双鱼座按现代守护星海王星判断，可把传统守护星木星作为辅助参考；巨蟹座看月亮；白羊座看火星。
+- luckyNumber 必须是 1-99 的整数。
+- 不要输出幸运数字理由字段，理由只用于你判断数字，不要写入 JSON。`;
 
   const response = await fetch("https://api.deepseek.com/chat/completions", {
     method: "POST",
