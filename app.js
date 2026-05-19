@@ -1,3 +1,4 @@
+const CONTENT_VERSION = 2;
 const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 const GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
 const ZHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
@@ -586,6 +587,7 @@ function renderGeneratedZodiac(zodiac) {
 
 function renderGeneratedContent(content) {
   if (!content) return;
+  if (content.version !== CONTENT_VERSION) return;
   if (Array.isArray(content.englishWords) && content.englishWords.length === 5) {
     renderGeneratedWordCards(document.querySelector("#english-words"), content.englishWords, false);
   }
