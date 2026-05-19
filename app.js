@@ -1,4 +1,4 @@
-const CONTENT_VERSION = 2;
+const CONTENT_VERSION = 3;
 const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 const GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
 const ZHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
@@ -271,6 +271,12 @@ function quoteBlock(...items) {
   return `<blockquote>${items.map((item) => `<span>${item}</span>`).join("")}</blockquote>`;
 }
 
+function luckyNumber(parts, signName) {
+  const signIndex = ZODIAC_SIGNS.indexOf(signName);
+  const seed = seedFromDate(parts) + (signIndex + 1) * 97;
+  return (seededIndex(seed, 99, signIndex) % 99) + 1;
+}
+
 function currentTransits(parts) {
   const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 4));
   const days = (date.getTime() - Date.UTC(2000, 0, 1, 12)) / 86400000;
@@ -502,7 +508,10 @@ function renderZodiac(parts) {
     const fortune = buildHoroscope(sign, transits);
     return `
       <article class="zodiac-card">
-        <h3>${sign.name}今日运势</h3>
+        <div class="zodiac-card-header">
+          <h3>${sign.name}今日运势</h3>
+          <span class="lucky-number">幸运数字 ${luckyNumber(parts, sign.name)}</span>
+        </div>
         <div class="zodiac-part">
           <h4>感情</h4>
           ${fortune.love}
@@ -587,7 +596,10 @@ function renderGeneratedZodiac(zodiac) {
       const advice = item.sections?.advice || {};
       return `
         <article class="zodiac-card">
-          <h3>${escapeHtml(item.sign)}今日运势</h3>
+          <div class="zodiac-card-header">
+            <h3>${escapeHtml(item.sign)}今日运势</h3>
+            <span class="lucky-number">幸运数字 ${escapeHtml(item.luckyNumber)}</span>
+          </div>
           <div class="zodiac-part">
             <h4>感情</h4>
             ${generatedParagraphs(love.paragraphs)}

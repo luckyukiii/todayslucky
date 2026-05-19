@@ -287,11 +287,33 @@ h1 {
   border-radius: 14px;
 }
 
+.zodiac-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
 .zodiac-card h3 {
-  margin: 0 0 14px;
+  margin: 0;
   color: #211332;
   font-size: 19px;
   line-height: 1.35;
+}
+
+.lucky-number {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid rgba(141, 77, 232, 0.18);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 241, 190, 0.95), rgba(244, 231, 255, 0.95));
+  color: #5d238c;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
 }
 
 .zodiac-part {
@@ -694,6 +716,12 @@ h1 {
 
   .section-heading h2 {
     font-size: 21px;
+  }
+
+  .zodiac-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .color-card,
