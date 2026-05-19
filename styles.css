@@ -380,7 +380,8 @@ h1 {
 
 .word-top {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 9px;
   margin-bottom: 12px;
 }
@@ -409,9 +410,90 @@ h1 {
   font-weight: 850;
 }
 
+.speak-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border: 1px solid rgba(90, 63, 214, 0.22);
+  border-radius: 50%;
+  background: #f0edff;
+  color: var(--blue);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.korean .speak-button {
+  border-color: rgba(75, 25, 125, 0.24);
+  background: #f6ebff;
+  color: var(--purple);
+}
+
+.speak-button:hover,
+.speak-button:focus-visible {
+  transform: translateY(-1px);
+  border-color: currentColor;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(62, 33, 116, 0.16);
+  outline: none;
+}
+
+.speak-button.is-speaking {
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(90, 63, 214, 0.12);
+}
+
+.speaker-icon {
+  position: relative;
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+
+.speaker-icon::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 3px;
+  width: 9px;
+  height: 9px;
+  background: currentColor;
+  clip-path: polygon(0 34%, 36% 34%, 75% 8%, 75% 92%, 36% 66%, 0 66%);
+}
+
+.speaker-icon::after {
+  content: "";
+  position: absolute;
+  right: 1px;
+  top: 4px;
+  width: 6px;
+  height: 7px;
+  border: 2px solid currentColor;
+  border-left: 0;
+  border-radius: 0 10px 10px 0;
+}
+
+.speak-button.is-speaking .speaker-icon::after {
+  animation: sound-pulse 700ms ease-in-out infinite;
+}
+
+@keyframes sound-pulse {
+  50% {
+    opacity: 0.35;
+    transform: translateX(1px) scaleX(1.12);
+  }
+}
+
 .pron {
   color: var(--muted);
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .word-card p {

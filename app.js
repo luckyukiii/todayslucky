@@ -409,6 +409,7 @@ function renderWordCards(target, words, isKorean = false) {
           <div class="word-top">
             <span class="word-number">${index + 1}</span>
             <span class="word">${word}</span>
+            ${renderSpeakButton(word, isKorean ? "ko-KR" : "en-US")}
             <span class="pron">${pron}</span>
           </div>
           <p><strong>词义：</strong>${meaning}</p>
@@ -488,6 +489,15 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function renderSpeakButton(word, lang) {
+  const safeWord = escapeHtml(word);
+  return `
+    <button class="speak-button" type="button" data-speak-word="${safeWord}" data-speak-lang="${lang}" aria-label="播放 ${safeWord} 的发音">
+      <span class="speaker-icon" aria-hidden="true"></span>
+    </button>
+  `;
+}
+
 function renderGeneratedWordCards(target, words, isKorean = false) {
   target.innerHTML = words
     .map(
@@ -496,6 +506,7 @@ function renderGeneratedWordCards(target, words, isKorean = false) {
           <div class="word-top">
             <span class="word-number">${index + 1}</span>
             <span class="word">${escapeHtml(item.word)}</span>
+            ${renderSpeakButton(item.word, isKorean ? "ko-KR" : "en-US")}
             <span class="pron">${escapeHtml(item.pronunciation)}</span>
           </div>
           <p><strong>词义：</strong>${escapeHtml(item.meaning)}</p>
@@ -601,6 +612,56 @@ async function loadGeneratedContent(key) {
     console.info("Using local fallback content.", error);
   }
 }
+
+let speechVoices = [];
+
+function refreshSpeechVoices() {
+  if (!("speechSynthesis" in window)) return;
+  speechVoices = window.speechSynthesis.getVoices();
+}
+
+function pickSpeechVoice(lang) {
+  const target = lang.toLowerCase();
+  const family = target.split("-")[0];
+  return (
+    speechVoices.find((voice) => voice.lang.toLowerCase() === target) ||
+    speechVoices.find((voice) => voice.lang.toLowerCase().startsWith(`${family}-`)) ||
+    null
+  );
+}
+
+function speakWord(word, lang, trigger) {
+  if (!word || !("speechSynthesis" in window)) return;
+
+  window.speechSynthesis.cancel();
+  refreshSpeechVoices();
+
+  const utterance = new SpeechSynthesisUtterance(word);
+  utterance.lang = lang;
+  utterance.voice = pickSpeechVoice(lang);
+  utterance.rate = lang === "ko-KR" ? 0.88 : 0.92;
+  utterance.pitch = 1;
+
+  document.querySelectorAll(".speak-button.is-speaking").forEach((button) => {
+    button.classList.remove("is-speaking");
+  });
+  trigger?.classList.add("is-speaking");
+  utterance.onend = () => trigger?.classList.remove("is-speaking");
+  utterance.onerror = () => trigger?.classList.remove("is-speaking");
+
+  window.speechSynthesis.speak(utterance);
+}
+
+if ("speechSynthesis" in window) {
+  refreshSpeechVoices();
+  window.speechSynthesis.addEventListener("voiceschanged", refreshSpeechVoices);
+}
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest(".speak-button");
+  if (!button) return;
+  speakWord(button.dataset.speakWord, button.dataset.speakLang, button);
+});
 
 function render() {
   const parts = shanghaiParts();
