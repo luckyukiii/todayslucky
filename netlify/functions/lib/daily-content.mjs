@@ -1,4 +1,6 @@
+const CONTENT_VERSION = 2;
 const ZODIAC_SIGNS = ["白羊座", "金牛座", "双子座", "巨蟹座", "狮子座", "处女座", "天秤座", "天蝎座", "射手座", "摩羯座", "水瓶座", "双鱼座"];
+const DAILY_ZODIAC_SIGNS = ["双鱼座", "巨蟹座", "白羊座"];
 const SIGN_ELEMENTS = ["火", "土", "风", "水", "火", "土", "风", "水", "火", "土", "风", "水"];
 const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 
@@ -107,7 +109,9 @@ function normalizeZodiac(item) {
 }
 
 function validateContent(raw, parts, transits) {
+  const zodiacItems = (raw.zodiac || []).map(normalizeZodiac).filter((item) => item.sign);
   const content = {
+    version: CONTENT_VERSION,
     date: dateKey(parts),
     weekday: weekdayName(parts),
     generatedAt: new Date().toISOString(),
@@ -123,7 +127,7 @@ function validateContent(raw, parts, transits) {
       body: String(raw.history?.body || "").trim(),
       sources: Array.isArray(raw.history?.sources) ? raw.history.sources.map((source) => [String(source[0] || ""), String(source[1] || "")]).filter(([name, href]) => name && href).slice(0, 3) : [],
     },
-    zodiac: (raw.zodiac || []).map(normalizeZodiac).filter((item) => item.sign).slice(0, 3),
+    zodiac: DAILY_ZODIAC_SIGNS.map((sign) => zodiacItems.find((item) => item.sign === sign)).filter(Boolean),
   };
 
   if (content.englishWords.length !== 5) throw new Error("AI response must contain exactly 5 English words.");
@@ -131,6 +135,7 @@ function validateContent(raw, parts, transits) {
   if (!content.fact.question || !content.fact.answer) throw new Error("AI response missing fact.");
   if (!content.history.title || !content.history.body) throw new Error("AI response missing history.");
   if (content.zodiac.length !== 3) throw new Error("AI response must contain 3 zodiac entries.");
+  if (content.zodiac.map((item) => item.sign).join("、") !== DAILY_ZODIAC_SIGNS.join("、")) throw new Error(`AI response zodiac signs must be ${DAILY_ZODIAC_SIGNS.join("、")}.`);
   return content;
 }
 
@@ -163,7 +168,7 @@ ${usedHistory.join("；") || "无"}
   "history": {"title":"","body":"","sources":[]},
   "zodiac": [
     {
-      "sign": "巨蟹座",
+      "sign": "双鱼座",
       "sections": {
         "love": {"paragraphs": []},
         "work": {"paragraphs": [], "good": [], "avoid": []},
@@ -176,10 +181,10 @@ ${usedHistory.join("；") || "无"}
 
 内容要求：
 1. englishWords 必须 5 个，生活/职场常用，含词义、音标、英文例句、中文翻译、记忆提示。
-2. koreanWords 必须 5 个，生活/职场常用，含词义、发音罗马音、韩文例句、中文翻译、记忆提示。
+2. koreanWords 必须 5 个，偏生活化和日常交流，优先选择吃饭、咖啡、购物、便利店、交通、问路、天气、身体感受、家居和出门场景中的常用词；少选会议、文件、预算、审批等职场词。含词义、发音罗马音、韩文例句、中文翻译、记忆提示。
 3. fact 先抛问题再回答，answer 控制在 200-300 个中文字符，轻松、有趣、通俗。
 4. history 从科技、电影、音乐等领域挑一个“历史上的今天”相关事件，body 控制在 200-300 个中文字符。不要编造来源链接，sources 可以为空数组。
-5. zodiac 只写巨蟹座、天蝎座、双鱼座。每个星座只包含 感情/工作/财运/今日建议 四栏。
+5. zodiac 按顺序只写双鱼座、巨蟹座、白羊座。每个星座只包含 感情/工作/财运/今日建议 四栏。
 6. 星座文案参考这种风格：具体、短句、有节奏，可以有“今天适合/不适合”列表和一个提问式 quote；不要幸运色、幸运数字、综合运势、关键词。
 7. 今日建议只写 1-2 句，有力量感，不鸡汤，不宿命论，不夸张预测。`;
 
