@@ -19,6 +19,10 @@ export default async (req) => {
     const requestedDate = parseDateKey(url.searchParams.get("date"));
     const store = getStore("daily-content");
     let used = (await store.get("used-topics", { type: "json", consistency: "strong" })) || {};
+    const latest = await store.get("latest", { type: "json", consistency: "strong" });
+    if (latest?.englishWords?.length || latest?.koreanWords?.length || latest?.fact?.question) {
+      used = updateUsedTopics(used, latest);
+    }
     const generated = [];
 
     const target = requestedDate || shanghaiParts(1);

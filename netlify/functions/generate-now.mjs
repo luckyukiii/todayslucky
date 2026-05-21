@@ -13,7 +13,11 @@ export default async (req) => {
     const parts = parseDateKey(url.searchParams.get("date")) || shanghaiParts(0);
     const key = dateKey(parts);
     const store = getStore("daily-content");
-    const used = (await store.get("used-topics", { type: "json", consistency: "strong" })) || {};
+    let used = (await store.get("used-topics", { type: "json", consistency: "strong" })) || {};
+    const latest = await store.get("latest", { type: "json", consistency: "strong" });
+    if (latest?.englishWords?.length || latest?.koreanWords?.length || latest?.fact?.question) {
+      used = updateUsedTopics(used, latest);
+    }
     const content = await generateDailyContent(parts, used);
 
     await store.setJSON(`daily/${key}`, content);
